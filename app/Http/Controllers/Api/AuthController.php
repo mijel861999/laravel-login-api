@@ -19,12 +19,18 @@ class AuthController extends Controller
         // Validación de los datos
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email',
             'password' => 'required|confirmed'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422); // Cambia el código de estado según tu preferencia
+        }
+
+        $existingUser = User::where('email', $request->name)->first();
+
+        if (!$existingUser) {
+            return response(["ok" => false, "message" => "El correo electrónico ya está en uso."],  HttpFoundationResponse::HTTP_CONFLICT);
         }
 
         // Alta del usuario
@@ -34,7 +40,13 @@ class AuthController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        return response($user, HttpFoundationResponse::HTTP_NOT_FOUND);
+        // return response($user, HttpFoundationResponse::HTTP_CREATED);
+
+        return response([
+            "ok" => true,
+            "message" => "Registro exitoso",
+            "user" => $user,  // Agregar la información del usuario aquí
+        ], HttpFoundationResponse::HTTP_CREATED);
     }
 
     public function login(Request $request) {
@@ -52,7 +64,12 @@ class AuthController extends Controller
             $user = Auth::user();
             $token = $user->createToken('token')->plainTextToken;
             $cookie = cookie("cookie_token", $token, 60*24);
-            return response(["ok" => true, "message" => "Ingreso exitóso", "token"=> $token], HttpFoundationResponse::HTTP_OK)->withoutCookie($cookie);
+            return response([
+            "ok" => true,
+            "message" => "Ingreso exitoso",
+            "user" => $user,  // Agregar la información del usuario aquí
+            "token" => $token
+            ], HttpFoundationResponse::HTTP_OK)->withoutCookie($cookie);
         } else {
             return response(["ok" => false,"message" => "Credenciales inválidas"],  HttpFoundationResponse::HTTP_UNAUTHORIZED);
         }
