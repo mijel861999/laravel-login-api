@@ -7,5 +7,6 @@
 </head>
 <body>
     <h1>Esto es un correo para recuperar tu contraseña</h1>
+    <a href="{{ $link }}">{{ $link }}</a>
 </body>
 </html>

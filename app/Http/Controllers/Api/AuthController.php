@@ -110,14 +110,17 @@ class AuthController extends Controller
             ['token' => $token, 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()]
         );
 
+        $this->sendEmail($token);
+
         return response(["ok" => true, "message" => "Se te envió un correo electrónico para que recuperes tu contraseña.", "token" => $token], 200);
     }
 
     // Envio de correo electrónico
-    public function sendEmail(Request $request) {
+    public function sendEmail($token) {
+        $link = "www.google.com/$token"; // Ajusta la ruta según tus necesidades
 
         foreach(['mijel.dev@gmail.com'] as $recipient) {
-            Mail::to($recipient)->send(new recuperarContrasenaMail());
+            Mail::to($recipient)->send(new recuperarContrasenaMail($link));
         }
 
         return response([

@@ -12,20 +12,21 @@ use Illuminate\Queue\SerializesModels;
 class recuperarContrasenaMail extends Mailable
 {
     use Queueable, SerializesModels;
+    public $link;
 
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($link)
     {
-        //
+        $this->link = $link;
     }
 
     public function build()
     {
         return $this->view('mails.videogame');
     }
-    
+
     // public function content(): Content
     // {
     //     return new Content(
