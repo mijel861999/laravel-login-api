@@ -110,16 +110,16 @@ class AuthController extends Controller
             ['token' => $token, 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()]
         );
 
-        $this->sendEmail($token);
+        $this->sendEmail($token, $request->email);
 
         return response(["ok" => true, "message" => "Se te envió un correo electrónico para que recuperes tu contraseña.", "token" => $token], 200);
     }
 
     // Envio de correo electrónico
-    public function sendEmail($token) {
+    public function sendEmail($token, $recipentEmail) {
         $link = "http://localhost:5173/recover-password/$token"; // Ajusta la ruta según tus necesidades
 
-        foreach(['mijel.dev@gmail.com'] as $recipient) {
+        foreach([$recipentEmail] as $recipient) {
             Mail::to($recipient)->send(new recuperarContrasenaMail($link));
         }
 
@@ -152,5 +152,43 @@ class AuthController extends Controller
         }
 
         return response(["ok" => true, "message" => "Token válido."], 200);
+    }
+
+    public function changePassword(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string',
+            'token' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 402);
+        }
+
+        $passwordReset = DB::table('password_resets')
+        ->where('email', $request->email)
+        ->where('token', $request->token)
+        ->first();
+
+        if (!$passwordReset) {
+            return response(["ok" => false, "message" => "Token inválido o expirado."],  400);
+        }
+
+        $expirationTime = Carbon::parse($passwordReset->created_at)->addMinutes(60);
+        if (Carbon::now()->gt($expirationTime)) {
+            return response(["ok" => false, "message" => "El token ha expirado."],  404);
+        }
+
+        // Cambiar la contraseña del usuario
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            $user->update(['password' => Hash::make($request->password)]);
+
+            // Eliminar el token de reseteo de contraseñas después de usarlo
+            DB::table('password_resets')->where('email', $request->email)->delete();
+            return response(["ok" => true, "message" => "Contraseña cambiada exitosamente."], 200);
+        } else {
+            return response(["ok" => false, "message" => "Usuario no encontrado."],  404);
+        }
     }
 }

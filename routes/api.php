@@ -21,3 +21,5 @@ Route::post('resetPassword', [AuthController::class, 'sendRequestForRecoverpassw
 Route::get('sendEmailPrueba', [AuthController::class, 'sendEmail']);
 
 Route::post('checkTokenValid', [AuthController::class, 'checkTokenValid']);
+
+Route::post('changePassword', [AuthController::class, 'changePassword']);
