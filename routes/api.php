@@ -19,3 +19,5 @@ Route::post('password/reset', [ResetPasswordController::class, 'passwordReset'])
 Route::post('resetPassword', [AuthController::class, 'sendRequestForRecoverpassword']);
 
 Route::get('sendEmailPrueba', [AuthController::class, 'sendEmail']);
+
+Route::post('checkTokenValid', [AuthController::class, 'checkTokenValid']);

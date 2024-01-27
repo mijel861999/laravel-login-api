@@ -117,7 +117,7 @@ class AuthController extends Controller
 
     // Envio de correo electrónico
     public function sendEmail($token) {
-        $link = "www.google.com/$token"; // Ajusta la ruta según tus necesidades
+        $link = "http://localhost:5173/recover-password/$token"; // Ajusta la ruta según tus necesidades
 
         foreach(['mijel.dev@gmail.com'] as $recipient) {
             Mail::to($recipient)->send(new recuperarContrasenaMail($link));
@@ -127,5 +127,30 @@ class AuthController extends Controller
             "ok" => true,
             "message" => "Envío exitoso",
             ], HttpFoundationResponse::HTTP_OK);
+    }
+
+    public function checkTokenValid(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 402);
+        }
+
+        $passwordReset = DB::table('password_resets')->where('token', $request->token)->first();
+
+        if (!$passwordReset) {
+            return response(["ok" => false, "message" => "Token no válido."], 401);
+        }
+
+        $tokenExpiration = Carbon::parse($passwordReset->created_at)->addMinutes(60); // 60 minutos de validez
+
+        if (Carbon::now()->gt($tokenExpiration)) {
+            DB::table('password_resets')->where('token', $request->token)->delete();
+            return response(["ok" => false, "message" => "Token expirado."], 401);
+        }
+
+        return response(["ok" => true, "message" => "Token válido."], 200);
     }
 }
